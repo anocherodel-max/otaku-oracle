@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OtakuOracle — Your Picky Picks Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400&display=swap');
+
+  :root {
+    --ink: #0f0e17;
+    --paper: #1a1825;
+    --card: #221f35;
+    --card2: #2a2640;
+    --border: #3a3558;
+    --accent: #e84393;
+    --accent2: #7c5cbf;
+    --gold: #f5c842;
+    --muted: #7b7898;
+    --text: #e8e6f0;
+    --text2: #b8b5cc;
+    --glow: rgba(232,67,147,0.18);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--ink);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124,92,191,0.22) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 90% 10%, rgba(232,67,147,0.12) 0%, transparent 50%);
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 36px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,14,23,0.88);
+  }
+  .logo {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo span { font-weight: 400; opacity: 0.7; font-size: 0.9em; }
+  nav { display: flex; gap: 6px; }
+  .nav-btn {
+    background: none; border: none; color: var(--text2);
+    font-family: 'Inter', sans-serif; font-size: 0.85rem;
+    padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--card); color: var(--text);
+  }
+  .nav-btn.active { color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── VIEWS ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── HERO ADD SECTION ── */
+  .hero-add {
+    background: linear-gradient(135deg, var(--card), var(--card2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    position: relative; overflow: hidden;
+  }
+  .hero-add::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, var(--glow), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-add h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 18px; color: var(--text);
+  }
+  .add-row {
+    display: grid;
+    grid-template-columns: 1fr 160px 160px auto;
+    gap: 12px; align-items: end;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 0.75rem; color: var(--muted); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+  .field input, .field select {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 14px; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .field input::placeholder { color: var(--muted); }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(124,92,191,0.15);
+  }
+  .field select option { background: var(--paper); }
+
+  .btn-add {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white; padding: 10px 22px;
+    border-radius: 10px; cursor: pointer; font-weight: 600;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap; height: 40px;
+  }
+  .btn-add:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+
+  /* ── FILTERS BAR ── */
+  .filters-bar {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .filter-chip {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text2); padding: 6px 16px; border-radius: 20px;
+    font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-chip:hover, .filter-chip.active {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(232,67,147,0.08);
+  }
+
+  /* ── LIST GRID ── */
+  .list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  /* ── ENTRY CARD ── */
+  .entry-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .entry-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px var(--accent2);
+  }
+  .card-top {
+    padding: 16px 18px 12px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .card-title { font-weight: 600; font-size: 1rem; line-height: 1.35; }
+  .card-type-badge {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+    padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    text-transform: uppercase; margin-left: 8px; flex-shrink: 0;
+  }
+  .badge-anime { background: rgba(232,67,147,0.2); color: #f472b6; }
+  .badge-manhwa { background: rgba(124,92,191,0.25); color: #a78bfa; }
+  .badge-manga { background: rgba(245,200,66,0.2); color: #fcd34d; }
+  .badge-manhua { background: rgba(52,211,153,0.2); color: #6ee7b7; }
+  .badge-novel { background: rgba(251,146,60,0.2); color: #fdba74; }
+
+  .card-genres {
+    padding: 0 18px 10px;
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+  .genre-tag {
+    font-size: 0.72rem; background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border); color: var(--text2);
+    padding: 2px 8px; border-radius: 5px;
+  }
+
+  .card-ratings { padding: 10px 18px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .rating-row {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 5px;
+  }
+  .rating-label { font-size: 0.72rem; color: var(--muted); }
+  .rating-stars { display: flex; gap: 2px; }
+  .star { font-size: 0.75rem; }
+  .star.filled { color: var(--gold); }
+  .star.empty { color: var(--border); }
+
+  .card-overall {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .overall-score {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), #f97316);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .overall-label { font-size: 0.72rem; color: var(--muted); }
+
+  .card-actions {
+    display: flex; gap: 8px; padding: 10px 18px 14px;
+  }
+  .btn-sm {
+    flex: 1; padding: 7px; border-radius: 8px;
+    font-size: 0.78rem; font-weight: 500; cursor: pointer;
+    border: none; font-family: 'Inter', sans-serif; transition: all 0.2s;
+  }
+  .btn-rate { background: rgba(124,92,191,0.2); color: #a78bfa; }
+  .btn-rate:hover { background: rgba(124,92,191,0.35); }
+  .btn-delete { background: rgba(255,80,80,0.1); color: #f87171; }
+  .btn-delete:hover { background: rgba(255,80,80,0.25); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center; padding: 80px 20px; color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3.5rem; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text2); }
+  .empty-state p { font-size: 0.88rem; line-height: 1.6; }
+
+  /* ── RECOMMEND VIEW ── */
+  .recommend-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 28px;
+    position: relative; overflow: hidden;
+  }
+  .recommend-panel::after {
+    content: ''; position: absolute; bottom: -60px; left: -60px;
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(124,92,191,0.12), transparent 70%);
+    pointer-events: none;
+  }
+  .rec-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+  }
+  .rec-header h2 {
+    font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 600;
+  }
+  .rec-header p { font-size: 0.85rem; color: var(--text2); margin-top: 3px; }
+
+  .oracle-icon {
+    width: 52px; height: 52px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+
+  .rec-options {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+  }
+  .rec-option-group { display: flex; flex-direction: column; gap: 6px; }
+  .rec-option-group label { font-size: 0.75rem; color: var(--muted); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+  .rec-option-group select, .rec-option-group input {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 0.88rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  .rec-option-group select:focus, .rec-option-group input:focus {
+    border-color: var(--accent2);
+  }
+  .rec-option-group select option { background: var(--paper); }
+
+  .btn-oracle {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white; padding: 14px;
+    border-radius: 12px; cursor: pointer; font-weight: 600;
+    font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 0.05em;
+    transition: opacity 0.2s, transform 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-oracle:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+  .btn-oracle:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── RESULTS ── */
+  .rec-results { margin-top: 28px; }
+  .rec-results h3 {
+    font-family: 'Cinzel', serif; font-size: 1rem;
+    margin-bottom: 20px; color: var(--text2);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .rec-results h3::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .rec-card {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .rec-card:hover { border-color: var(--accent2); }
+
+  .rec-card-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .rec-title { font-size: 1.05rem; font-weight: 600; }
+  .rec-meta { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+  .rec-match {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; padding: 4px 12px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 700; white-space: nowrap;
+  }
+
+  .rec-why {
+    font-size: 0.85rem; color: var(--text2); line-height: 1.65;
+    margin-bottom: 12px;
+  }
+
+  .rec-ratings-preview {
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .rec-rating-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 12px;
+    font-size: 0.76rem;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .rec-rating-pill .pill-label { color: var(--muted); }
+  .rec-rating-pill .pill-val { color: var(--gold); font-weight: 600; }
+
+  /* ── RATING MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; backdrop-filter: blur(4px); padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px 32px;
+    width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 {
+    font-family: 'Cinzel', serif; font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+  .modal-subtitle { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; }
+  .modal-field { margin-bottom: 18px; }
+  .modal-field label {
+    display: block; font-size: 0.75rem; color: var(--muted);
+    font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .star-picker { display: flex; gap: 6px; }
+  .star-pick {
+    font-size: 1.4rem; cursor: pointer; transition: transform 0.1s;
+    color: var(--border); line-height: 1;
+  }
+  .star-pick:hover { transform: scale(1.2); }
+  .star-pick.on { color: var(--gold); }
+
+  .modal-field textarea {
+    width: 100%; background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 0.88rem;
+    resize: vertical; min-height: 80px; outline: none;
+  }
+  .modal-field textarea:focus { border-color: var(--accent2); }
+  .modal-field textarea::placeholder { color: var(--muted); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .btn-modal-save {
+    flex: 1; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white; padding: 11px;
+    border-radius: 10px; cursor: pointer; font-weight: 600;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem;
+  }
+  .btn-modal-cancel {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text2); padding: 11px 20px;
+    border-radius: 10px; cursor: pointer; font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-modal-cancel:hover { color: var(--text); }
+
+  /* ── STATS VIEW ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 5px; }
+
+  .top-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .top-list-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    font-family: 'Cinzel', serif; font-size: 0.95rem;
+  }
+  .top-list-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .top-list-item:last-child { border-bottom: none; }
+  .top-rank {
+    font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: 700;
+    color: var(--muted); width: 24px; flex-shrink: 0; text-align: center;
+  }
+  .top-rank.gold { color: var(--gold); }
+  .top-rank.silver { color: #d1d5db; }
+  .top-rank.bronze { color: #cd7f32; }
+  .top-info { flex: 1; }
+  .top-name { font-size: 0.9rem; font-weight: 500; }
+  .top-type-small { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .top-score {
+    font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700;
+    color: var(--gold);
+  }
+
+  /* ── LOADING ── */
+  .loading-bar {
+    display: none; height: 3px; background: var(--border);
+    border-radius: 3px; overflow: hidden; margin-bottom: 24px;
+  }
+  .loading-bar.active { display: block; }
+  .loading-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    animation: loadAnim 2s ease-in-out infinite;
+  }
+  @keyframes loadAnim {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 60%; margin-left: 20%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--text); padding: 12px 20px; border-radius: 12px;
+    font-size: 0.88rem; z-index: 300;
+    transform: translateY(20px); opacity: 0;
+    transition: all 0.3s; pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    header { padding: 16px 18px; }
+    main { padding: 20px 14px; }
+    .add-row { grid-template-columns: 1fr 1fr; }
+    .btn-add { grid-column: span 2; }
+    .hero-add { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">OtakuOracle <span>// Picky Picks Engine</span></div>
+  <nav>
+    <button class="nav-btn active" onclick="showView('library')">📚 Library</button>
+    <button class="nav-btn" onclick="showView('recommend')">✨ Oracle</button>
+    <button class="nav-btn" onclick="showView('stats')">📊 Stats</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ── LIBRARY VIEW ── -->
+  <div id="view-library" class="view active">
+    <div class="hero-add">
+      <h2>Add to Your Collection</h2>
+      <div class="add-row">
+        <div class="field">
+          <label>Title</label>
+          <input id="inp-title" type="text" placeholder="e.g. Solo Leveling, Vinland Saga…">
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select id="inp-type">
+            <option value="anime">Anime</option>
+            <option value="manhwa" selected>Manhwa</option>
+            <option value="manga">Manga</option>
+            <option value="manhua">Manhua</option>
+            <option value="novel">Novel</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Genre Tags</label>
+          <input id="inp-genres" type="text" placeholder="action, fantasy…">
+        </div>
+        <button class="btn-add" onclick="addEntry()">+ Add</button>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-chip" onclick="setFilter('anime', this)">Anime</button>
+      <button class="filter-chip" onclick="setFilter('manhwa', this)">Manhwa</button>
+      <button class="filter-chip" onclick="setFilter('manga', this)">Manga</button>
+      <button class="filter-chip" onclick="setFilter('manhua', this)">Manhua</button>
+      <button class="filter-chip" onclick="setFilter('novel', this)">Novel</button>
+    </div>
+
+    <div class="list-grid" id="list-grid"></div>
+    <div id="empty-library" class="empty-state" style="display:none">
+      <div class="icon">🌌</div>
+      <h3>Your collection is empty</h3>
+      <p>Add some anime, manhwa, or manga above.<br>The Oracle learns your taste from what you love.</p>
+    </div>
+  </div>
+
+  <!-- ── RECOMMEND VIEW ── -->
+  <div id="view-recommend" class="view">
+    <div class="recommend-panel">
+      <div class="rec-header">
+        <div class="oracle-icon">🔮</div>
+        <div>
+          <h2>The Oracle</h2>
+          <p>Analyzes your collection and finds stories worth your time.</p>
+        </div>
+      </div>
+
+      <div class="rec-options">
+        <div class="rec-option-group">
+          <label>Focus Type</label>
+          <select id="rec-type">
+            <option value="any">Any Type</option>
+            <option value="anime">Anime only</option>
+            <option value="manhwa">Manhwa only</option>
+            <option value="manga">Manga only</option>
+            <option value="manhua">Manhua only</option>
+            <option value="novel">Novel only</option>
+          </select>
+        </div>
+        <div class="rec-option-group">
+          <label>Priority</label>
+          <select id="rec-priority">
+            <option value="story">Story-driven</option>
+            <option value="art">Art / Visuals first</option>
+            <option value="action">Peak action</option>
+            <option value="character">Character depth</option>
+            <option value="world">World-building</option>
+          </select>
+        </div>
+        <div class="rec-option-group">
+          <label>Mood</label>
+          <select id="rec-mood">
+            <option value="hype">Hype / Adrenaline</option>
+            <option value="emotional">Emotional / Deep</option>
+            <option value="cozy">Chill / Slice-of-life</option>
+            <option value="dark">Dark / Gritty</option>
+            <option value="mind">Mind-bending</option>
+          </select>
+        </div>
+        <div class="rec-option-group">
+          <label>Avoid genres</label>
+          <input id="rec-avoid" type="text" placeholder="e.g. isekai, harem…">
+        </div>
+      </div>
+
+      <button class="btn-oracle" id="btn-oracle" onclick="getRecommendations()">
+        <span>🔮</span> Consult the Oracle
+      </button>
+    </div>
+
+    <div class="loading-bar" id="loading-bar"><div class="loading-fill"></div></div>
+    <div id="rec-results-container"></div>
+  </div>
+
+  <!-- ── STATS VIEW ── -->
+  <div id="view-stats" class="view">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="top-list" id="top-list">
+      <div class="top-list-header">🏆 Your Top Rated</div>
+    </div>
+    <div id="stats-empty" class="empty-state" style="display:none">
+      <div class="icon">📊</div>
+      <h3>No data yet</h3>
+      <p>Add and rate entries in your library first.</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── RATING MODAL ── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Rate this Entry</h3>
+    <div class="modal-subtitle" id="modal-subtitle">Your ratings help the Oracle understand your taste.</div>
+
+    <div class="modal-field">
+      <label>Story / Plot</label>
+      <div class="star-picker" id="stars-story" data-key="story"></div>
+    </div>
+    <div class="modal-field">
+      <label>Art Style</label>
+      <div class="star-picker" id="stars-art" data-key="art"></div>
+    </div>
+    <div class="modal-field">
+      <label>Characters</label>
+      <div class="star-picker" id="stars-chars" data-key="characters"></div>
+    </div>
+    <div class="modal-field">
+      <label>World-building</label>
+      <div class="star-picker" id="stars-world" data-key="world"></div>
+    </div>
+    <div class="modal-field">
+      <label>Pacing</label>
+      <div class="star-picker" id="stars-pacing" data-key="pacing"></div>
+    </div>
+    <div class="modal-field">
+      <label>Enjoyment / Vibe</label>
+      <div class="star-picker" id="stars-enjoyment" data-key="enjoyment"></div>
+    </div>
+    <div class="modal-field">
+      <label>Your Notes (optional)</label>
+      <textarea id="modal-notes" placeholder="What did you love or hate about it?"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveRating()">Save Rating</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let entries = JSON.parse(localStorage.getItem('oo-entries') || '[]');
+let currentFilter = 'all';
+let ratingTarget = null;
+let tempRatings = {};
+
+// ── PERSIST ──
+function save() {
+  localStorage.setItem('oo-entries', JSON.stringify(entries));
+}
+
+// ── VIEW SWITCHING ──
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn')[['library','recommend','stats'].indexOf(name)].classList.add('active');
+  if (name === 'stats') renderStats();
+}
+
+// ── ADD ENTRY ──
+function addEntry() {
+  const title = document.getElementById('inp-title').value.trim();
+  if (!title) { toast('Enter a title first.'); return; }
+  const type = document.getElementById('inp-type').value;
+  const genreRaw = document.getElementById('inp-genres').value.trim();
+  const genres = genreRaw ? genreRaw.split(',').map(g => g.trim()).filter(Boolean) : [];
+
+  entries.unshift({ id: Date.now(), title, type, genres, ratings: {}, notes: '' });
+  save();
+  document.getElementById('inp-title').value = '';
+  document.getElementById('inp-genres').value = '';
+  renderLibrary();
+  toast('Added to your collection!');
+}
+
+// ── FILTER ──
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderLibrary();
+}
+
+// ── RENDER LIBRARY ──
+function renderLibrary() {
+  const filtered = currentFilter === 'all' ? entries : entries.filter(e => e.type === currentFilter);
+  const grid = document.getElementById('list-grid');
+  const empty = document.getElementById('empty-library');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(e => {
+    const rKeys = ['story','art','characters','world','pacing','enjoyment'];
+    const rated = rKeys.filter(k => e.ratings[k]);
+    const overall = rated.length > 0
+      ? (rated.reduce((s,k) => s + e.ratings[k], 0) / rated.length).toFixed(1)
+      : null;
+
+    const miniRatings = ['story','art','characters'].map(k => `
+      <div class="rating-row">
+        <span class="rating-label">${k.charAt(0).toUpperCase()+k.slice(1)}</span>
+        <div class="rating-stars">
+          ${[1,2,3,4,5].map(i => `<span class="star ${e.ratings[k] >= i ? 'filled' : 'empty'}">★</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+    <div class="entry-card">
+      <div class="card-top">
+        <div class="card-title">${esc(e.title)}</div>
+        <span class="card-type-badge badge-${e.type}">${e.type}</span>
+      </div>
+      ${e.genres.length > 0 ? `<div class="card-genres">${e.genres.map(g => `<span class="genre-tag">${esc(g)}</span>`).join('')}</div>` : ''}
+      <div class="card-ratings">${miniRatings}</div>
+      ${overall ? `
+      <div class="card-overall">
+        <div><div class="overall-score">${overall}</div><div class="overall-label">Overall</div></div>
+        <div style="font-size:0.78rem;color:var(--muted);text-align:right">${rated.length} of 6<br>categories rated</div>
+      </div>` : `<div style="padding:10px 18px;font-size:0.78rem;color:var(--muted)">Not rated yet</div>`}
+      ${e.notes ? `<div style="padding:0 18px 10px;font-size:0.78rem;color:var(--text2);font-style:italic">"${esc(e.notes.slice(0,80))}${e.notes.length>80?'…':''}"</div>` : ''}
+      <div class="card-actions">
+        <button class="btn-sm btn-rate" onclick="openModal(${e.id})">✏️ Rate</button>
+        <button class="btn-sm btn-delete" onclick="deleteEntry(${e.id})">🗑 Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── DELETE ──
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  save(); renderLibrary(); toast('Removed.');
+}
+
+// ── RATING MODAL ──
+function openModal(id) {
+  ratingTarget = entries.find(e => e.id === id);
+  if (!ratingTarget) return;
+  tempRatings = { ...ratingTarget.ratings };
+  document.getElementById('modal-title').textContent = ratingTarget.title;
+  document.getElementById('modal-subtitle').textContent = `${ratingTarget.type} — rate each category`;
+  document.getElementById('modal-notes').value = ratingTarget.notes || '';
+
+  ['story','art','characters','world','pacing','enjoyment'].forEach(key => {
+    const container = document.querySelector(`[data-key="${key}"]`);
+    container.innerHTML = [1,2,3,4,5].map(i =>
+      `<span class="star-pick ${(tempRatings[key]||0) >= i ? 'on' : ''}" onclick="setStars('${key}', ${i})" data-val="${i}">★</span>`
+    ).join('');
+  });
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function setStars(key, val) {
+  tempRatings[key] = val;
+  const container = document.querySelector(`[data-key="${key}"]`);
+  container.querySelectorAll('.star-pick').forEach(s => {
+    s.classList.toggle('on', parseInt(s.dataset.val) <= val);
+  });
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  ratingTarget = null; tempRatings = {};
+}
+
+function saveRating() {
+  if (!ratingTarget) return;
+  ratingTarget.ratings = { ...tempRatings };
+  ratingTarget.notes = document.getElementById('modal-notes').value.trim();
+  save(); renderLibrary(); closeModal();
+  toast('Rating saved!');
+}
+
+// ── STATS ──
+function renderStats() {
+  const totalEntries = entries.length;
+  const rated = entries.filter(e => Object.keys(e.ratings).length > 0);
+  const types = {};
+  entries.forEach(e => types[e.type] = (types[e.type]||0)+1);
+  const topType = Object.entries(types).sort((a,b)=>b[1]-a[1])[0];
+
+  const overalls = entries.map(e => {
+    const keys = Object.keys(e.ratings);
+    if (!keys.length) return null;
+    const avg = keys.reduce((s,k)=>s+e.ratings[k],0)/keys.length;
+    return { ...e, avg };
+  }).filter(Boolean).sort((a,b)=>b.avg-a.avg);
+
+  const avgScore = overalls.length > 0
+    ? (overalls.reduce((s,e)=>s+e.avg,0)/overalls.length).toFixed(1) : '—';
+
+  if (totalEntries === 0) {
+    document.getElementById('stats-grid').innerHTML='';
+    document.getElementById('top-list').style.display='none';
+    document.getElementById('stats-empty').style.display='block';
+    return;
+  }
+  document.getElementById('stats-empty').style.display='none';
+  document.getElementById('top-list').style.display='block';
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-val">${totalEntries}</div><div class="stat-label">In Collection</div></div>
+    <div class="stat-card"><div class="stat-val">${rated.length}</div><div class="stat-label">Rated</div></div>
+    <div class="stat-card"><div class="stat-val">${avgScore}</div><div class="stat-label">Avg Score</div></div>
+    <div class="stat-card"><div class="stat-val">${topType ? topType[0] : '—'}</div><div class="stat-label">Top Format</div></div>
+  `;
+
+  const ranks = ['gold','silver','bronze'];
+  const topItems = overalls.slice(0,10).map((e,i) => `
+    <div class="top-list-item">
+      <div class="top-rank ${ranks[i]||''}">${i+1}</div>
+      <div class="top-info">
+        <div class="top-name">${esc(e.title)}</div>
+        <div class="top-type-small">${e.type}${e.genres.length?` · ${e.genres.slice(0,2).join(', ')}`:''}
+        </div>
+      </div>
+      <div class="top-score">${e.avg.toFixed(1)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('top-list').innerHTML =
+    `<div class="top-list-header">🏆 Your Top Rated</div>${topItems}`;
+}
+
+// ── ORACLE / RECOMMENDATIONS ──
+async function getRecommendations() {
+  if (entries.length < 1) {
+    toast('Add some entries to your library first!'); return;
+  }
+  const btn = document.getElementById('btn-oracle');
+  const loading = document.getElementById('loading-bar');
+  const container = document.getElementById('rec-results-container');
+
+  btn.disabled = true;
+  loading.classList.add('active');
+  container.innerHTML = '';
+
+  const recType = document.getElementById('rec-type').value;
+  const priority = document.getElementById('rec-priority').value;
+  const mood = document.getElementById('rec-mood').value;
+  const avoid = document.getElementById('rec-avoid').value.trim();
+
+  // Build collection summary
+  const collSummary = entries.map(e => {
+    const keys = Object.keys(e.ratings);
+    const avg = keys.length > 0
+      ? (keys.reduce((s,k)=>s+e.ratings[k],0)/keys.length).toFixed(1) : 'unrated';
+    const notesSnippet = e.notes ? ` Note: "${e.notes.slice(0,60)}"` : '';
+    return `- ${e.title} (${e.type}${e.genres.length?`, genres: ${e.genres.join('/')}`:''}), rating: ${avg}/5${notesSnippet}`;
+  }).join('\n');
+
+  const prompt = `You are an elite anime/manhwa/manga recommendation engine for someone who is VERY picky about what they read or watch. They only want suggestions that are genuinely similar or better than what they already love.
+
+Their current collection:
+${collSummary}
+
+Their preferences for THIS recommendation:
+- Type filter: ${recType === 'any' ? 'any (anime, manhwa, manga, etc.)' : recType + ' only'}
+- Priority: ${priority}
+- Mood: ${mood}
+- Genres to AVOID: ${avoid || 'none specified'}
+
+Based on their taste profile, recommend exactly 5 titles they would genuinely love. Be very specific about WHY each pick matches their exact taste. Do NOT recommend anything already in their list.
+
+Respond ONLY with a valid JSON array (no markdown, no preamble), like:
+[
+  {
+    "title": "Title Here",
+    "type": "manhwa",
+    "genres": ["action","fantasy"],
+    "matchScore": 94,
+    "why": "Two to three sentences explaining exactly why this matches their taste based on their collection.",
+    "ratings": {
+      "story": 5,
+      "art": 4,
+      "characters": 5,
+      "world": 4,
+      "pacing": 4,
+      "enjoyment": 5
+    },
+    "status": "Ongoing",
+    "chaptersOrEpisodes": "180+ chapters"
+  }
+]`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content.map(c => c.text || '').join('').trim();
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const recs = JSON.parse(clean);
+
+    renderRecs(recs);
+  } catch(err) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h3>Oracle couldn't connect</h3><p>Check your connection and try again.</p></div>`;
+  }
+
+  btn.disabled = false;
+  loading.classList.remove('active');
+}
+
+function renderRecs(recs) {
+  const container = document.getElementById('rec-results-container');
+  if (!recs || !recs.length) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🤔</div><h3>No results</h3><p>Try adjusting your filters.</p></div>`;
+    return;
+  }
+
+  const cats = [
+    {key:'story',label:'Story'},
+    {key:'art',label:'Art'},
+    {key:'characters',label:'Chars'},
+    {key:'world',label:'World'},
+    {key:'pacing',label:'Pacing'},
+    {key:'enjoyment',label:'Vibe'},
+  ];
+
+  container.innerHTML = `<div class="rec-results"><h3>Oracle's Picks for You</h3>` +
+    recs.map(r => {
+      const pills = cats.map(c => `
+        <div class="rec-rating-pill">
+          <span class="pill-label">${c.label}</span>
+          <span class="pill-val">${r.ratings?.[c.key] ?? '?'}/5</span>
+        </div>`).join('');
+      return `
+      <div class="rec-card">
+        <div class="rec-card-header">
+          <div>
+            <div class="rec-title">${esc(r.title)}</div>
+            <div class="rec-meta">${r.type} · ${(r.genres||[]).join(', ')} · ${r.chaptersOrEpisodes||''} · ${r.status||''}</div>
+          </div>
+          <div class="rec-match">${r.matchScore}% match</div>
+        </div>
+        <div class="rec-why">${esc(r.why)}</div>
+        <div class="rec-ratings-preview">${pills}</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// ── UTILS ──
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──
+renderLibrary();
+</script>
+</body>
+</html>
